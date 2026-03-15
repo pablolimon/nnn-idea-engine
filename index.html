@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NNN — Idea Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070707;--s1:#0d0d0d;--s2:#111;--bord:#1c1c1c;
+  --text:#eeede8;--muted:#5a5a5a;--dim:#2a2a2a;
+  --acc:#d4ff47;--red:#ff5a40;--teal:#4ecdc4;--gold:#f5c518;--purple:#b87fff;
+  --mono:'Courier Prime',monospace
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif}
+.m{font-family:var(--mono)}
+
+/* SETUP SCREEN */
+#setup{
+  display:none;position:fixed;inset:0;background:var(--bg);
+  z-index:999;align-items:center;justify-content:center;flex-direction:column;
+  padding:40px 24px;text-align:center;
+}
+#setup.visible{display:flex}
+.setup-box{max-width:420px;width:100%;text-align:left}
+.setup-title{font-weight:800;font-size:22px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:4px}
+.setup-sub{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.08em;margin-bottom:32px}
+.setup-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.setup-input{
+  width:100%;background:var(--s2);border:1px solid #2a2a2a;color:var(--text);
+  font-family:var(--mono);font-size:13px;padding:12px 14px;outline:none;
+  letter-spacing:.04em;margin-bottom:8px;
+}
+.setup-input:focus{border-color:#3a3a3a}
+.setup-hint{font-family:var(--mono);font-size:10px;color:#282828;line-height:1.7;margin-bottom:24px}
+.setup-hint a{color:#383838;text-decoration:underline}
+
+/* HEADER */
+.hdr{border-bottom:1px solid var(--bord);padding:20px 28px 0;position:sticky;top:0;background:var(--bg);z-index:10}
+.hdr-inner{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px}
+.logo{font-weight:800;font-size:19px;letter-spacing:.24em;text-transform:uppercase}
+.logo-sub{font-family:var(--mono);font-size:10px;color:#2a2a2a;letter-spacing:.1em;margin-top:2px}
+.hdr-meta{text-align:right}
+.hdr-date{font-family:var(--mono);font-size:10px;color:#2a2a2a;letter-spacing:.05em}
+.hdr-status{font-family:var(--mono);font-size:9px;letter-spacing:.08em;margin-top:3px}
+.tabs{display:flex;gap:26px}
+.tab{
+  background:none;border:none;font-family:'Syne',sans-serif;font-size:11px;
+  font-weight:700;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;
+  padding:8px 0;border-bottom:2px solid transparent;transition:all .15s;color:var(--dim)
+}
+.tab.on{color:var(--text);border-bottom-color:var(--acc)}
+
+/* BODY */
+.body{max-width:740px;margin:0 auto;padding:28px}
+
+/* BUTTONS */
+.btn{
+  font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;border:1px solid;padding:5px 13px;background:transparent;
+  transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:7px
+}
+.btn-acc{border-color:var(--acc);color:var(--acc)}.btn-acc:hover{background:var(--acc);color:#000}
+.btn-dim{border-color:var(--dim);color:var(--muted)}.btn-dim:hover:not(:disabled){border-color:#444;color:var(--text)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-solid{
+  background:var(--acc);color:#000;border:none;font-family:var(--mono);
+  font-size:11px;font-weight:700;padding:7px 16px;cursor:pointer;letter-spacing:.04em
+}
+.btn-x{background:none;border:none;color:var(--dim);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;transition:color .12s}
+.btn-x:hover{color:var(--red)}
+.btn-settings{background:none;border:none;color:var(--dim);cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:5px 0;transition:color .12s}
+.btn-settings:hover{color:var(--muted)}
+
+/* TAGS */
+.cat-tag{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;display:inline-block}
+.brand-chip{
+  font-family:var(--mono);font-size:9px;letter-spacing:.06em;border:1px solid var(--bord);
+  color:var(--dim);padding:2px 8px;cursor:pointer;transition:all .12s;
+  text-transform:uppercase;background:transparent
+}
+.brand-chip.static{cursor:default}
+.brand-chip:not(.static):hover,.brand-chip.on{border-color:var(--acc);color:var(--acc);background:#d4ff470e}
+
+/* STATUS */
+.s-pill{
+  font-family:var(--mono);font-size:9px;border:1px solid;padding:3px 11px;
+  cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .12s;background:transparent
+}
+
+/* IDEA ROW */
+.idea-row{border-bottom:1px solid #141414;padding:17px 0}
+.idea-row:hover{background:#09090966}
+
+/* PIPE CARD */
+.pipe-card{border:1px solid #151515;padding:18px 18px 14px;margin-bottom:10px;background:#090909;transition:border-color .15s}
+.pipe-card:hover{border-color:#222}
+
+/* NOTE */
+.note{
+  width:100%;background:var(--s2);border:1px solid #242424;color:var(--text);
+  font-family:var(--mono);font-size:12px;padding:10px;resize:none;outline:none;line-height:1.7
+}
+.note:focus{border-color:#333}
+
+/* BRIEF */
+.brief-wrap{background:#050505;border:1px solid #1a1a1a;border-left:2px solid var(--acc);padding:18px;margin-top:14px}
+.b-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:#3a3a3a;text-transform:uppercase;margin-bottom:5px}
+.b-val{font-size:13px;color:#777;line-height:1.7}
+
+/* EMAIL MODAL */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:#000000cc;z-index:200;
+  align-items:center;justify-content:center;padding:24px
+}
+.modal-overlay.visible{display:flex}
+.modal{background:#0a0a0a;border:1px solid #222;max-width:680px;width:100%;max-height:85vh;overflow-y:auto}
+.modal-hdr{border-bottom:1px solid #1a1a1a;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+.modal-body{padding:20px}
+.email-preview{
+  background:#000;border:1px solid #1a1a1a;padding:24px;font-family:var(--mono);
+  font-size:12px;line-height:1.8;color:#888;max-height:400px;overflow-y:auto;
+  white-space:pre-wrap;word-break:break-word
+}
+.email-subject{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #1a1a1a}
+
+/* SKELETON */
+.skel{
+  background:linear-gradient(90deg,#111 25%,#1c1c1c 50%,#111 75%);
+  background-size:200% 100%;animation:sh 1.5s infinite;height:70px;margin-bottom:1px
+}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* SPINNER */
+.spin{width:10px;height:10px;border:1.5px solid #222;border-top-color:var(--acc);border-radius:50%;animation:ro .6s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes ro{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  background:var(--acc);color:#000;font-family:var(--mono);font-size:11px;
+  font-weight:700;padding:7px 18px;letter-spacing:.06em;z-index:9999;
+  pointer-events:none;animation:fu .18s ease;white-space:nowrap
+}
+@keyframes fu{from{opacity:0;transform:translateX(-50%) translateY(7px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.err{font-family:var(--mono);font-size:12px;color:#ff6060;line-height:1.7;padding:16px 0}
+.divider{border:none;border-top:1px solid #111;margin:12px 0}
+
+/* BODY EXPAND */
+.idea-body{font-size:13px;color:#888;line-height:1.75;border-left:2px solid;padding-left:14px;margin-top:10px}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1e1e1e}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup">
+  <div class="setup-box">
+    <div class="setup-title">NNN</div>
+    <div class="setup-sub">IDEA ENGINE — INITIAL SETUP</div>
+    <div class="setup-label">Anthropic API Key</div>
+    <input class="setup-input" type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+    <div class="setup-hint">
+      Your key is stored locally in your browser only.<br>
+      Never sent anywhere except the Anthropic API directly.<br>
+      Get yours at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+    </div>
+    <button class="btn-solid" onclick="saveApiKey()" style="width:100%;text-align:center;justify-content:center;font-size:13px;padding:12px">
+      ENTER THE ENGINE →
+    </button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-inner">
+      <div>
+        <div class="logo">NNN</div>
+        <div class="logo-sub m">IDEA ENGINE</div>
+      </div>
+      <div class="hdr-meta">
+        <div class="hdr-date m" id="hdr-date"></div>
+        <div class="hdr-status m" id="hdr-status" style="color:#2a2a2a"></div>
+        <button class="btn-settings m" onclick="resetKey()" style="margin-top:4px">⚙ settings</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" onclick="switchTab('today')" id="tab-today">Today (<span id="today-count">0</span>)</button>
+      <button class="tab" onclick="switchTab('pipeline')" id="tab-pipeline">Pipeline (<span id="pipe-count">0</span>)</button>
+    </div>
+  </div>
+
+  <!-- TODAY TAB -->
+  <div class="body" id="pane-today">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="m" id="ideas-meta" style="font-size:10px;color:#2a2a2a;letter-spacing:.06em"></div>
+      <button class="btn btn-dim" onclick="generate(true)" id="regen-btn">↻ Regenerate</button>
+    </div>
+    <div id="ideas-container"></div>
+  </div>
+
+  <!-- PIPELINE TAB -->
+  <div class="body" id="pane-pipeline" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+      <div class="m" id="pipe-meta" style="font-size:10px;color:#2a2a2a;letter-spacing:.06em"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-dim" onclick="exportDigest()" id="digest-btn">✉ weekly digest</button>
+      </div>
+    </div>
+    <div id="brand-filters" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:18px;align-items:center"></div>
+    <div id="pipe-container"></div>
+  </div>
+
+</div>
+
+<!-- EMAIL MODAL -->
+<div class="modal-overlay" id="email-modal" onclick="closeEmailModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hdr">
+      <div class="m" style="font-size:10px;letter-spacing:.1em;color:var(--muted)">EMAIL DRAFT</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-acc" onclick="copyEmail()">⎘ Copy</button>
+        <button class="btn-x" onclick="closeEmailModal()">×</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="email-subject" id="modal-subject"></div>
+      <div class="email-preview" id="modal-body"></div>
+      <div class="m" style="font-size:10px;color:#2a2a2a;margin-top:14px;line-height:1.7">
+        Copy this and paste into Gmail → Compose → or use as cold email body.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" style="display:none"></div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const TODAY = new Date().toISOString().split('T')[0];
+const IS_SUN = new Date().getDay() === 0;
+const DISP = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+const SK_IDEAS = `nnn:ideas:${TODAY}`;
+const SK_PIPE = 'nnn:pipeline:v5';
+const SK_KEY = 'nnn:apikey';
+
+let ideas = [];
+let pipeline = [];
+let activeTab = 'today';
+let expandedId = null;
+let briefLoading = null;
+let emailLoading = null;
+let digestLoading = false;
+let editNoteId = null;
+let brandFilter = null;
+let currentEmailContent = { subject: '', body: '' };
+let toastTimer = null;
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+const CAT = {
+  BD_STRATEGY:       { label:'BD / New Business',     c:'#d4ff47' },
+  CREATIVE_STRATEGY: { label:'Creative Strategy',      c:'#ff7043' },
+  RETAIL:            { label:'Retail & Commerce',      c:'#4ecdc4' },
+  COMMUNICATION:     { label:'Communication & Media',  c:'#f5c518' },
+  BRAND_PARTNERSHIPS:{ label:'Brand Partnerships',     c:'#b87fff' }
+};
+const STATUSES = ['Seed','Developing','Ready','Pitched'];
+const SC = { Seed:'#2e2e2e', Developing:'#d4ff47', Ready:'#4ecdc4', Pitched:'#ff7043' };
+const SCT = { Seed:'#888', Developing:'#000', Ready:'#000', Pitched:'#000' };
+
+const NNN_PROSPECTS = [
+  'Nike','Adidas','New Balance','ASICS','WHOOP','Salomon','K-Way','Arc\'teryx',
+  'Moschino','Gentle Monster','Dover Street Market','Stone Island','LEGO',
+  'Levi\'s','Ray-Ban','Beats by Dre','Spotify','Red Bull','Polaroid',
+  'Harley-Davidson','Absolut Vodka','Cartier','Retro Super Future',
+  'Jacquemus','Prada','Moncler','Rimowa','Bottega Veneta','Vans','The North Face'
+];
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+function getKey() { return localStorage.getItem(SK_KEY) || ''; }
+
+async function callClaude(system, msg, maxTokens = 2000) {
+  const key = getKey();
+  if (!key) { showSetup(); throw new Error('No API key'); }
+  const body = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: maxTokens,
+    messages: [{ role: 'user', content: msg }]
+  };
+  if (system) body.system = system;
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' }
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data;
+}
+
+function parseJ(txt) { return JSON.parse(txt.replace(/```json|```/g, '').trim()); }
+
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
+function lsSet(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+// ─── SETUP ────────────────────────────────────────────────────────────────────
+function showSetup() {
+  document.getElementById('setup').classList.add('visible');
+  document.getElementById('app').style.display = 'none';
+}
+function hideSetup() {
+  document.getElementById('setup').classList.remove('visible');
+  document.getElementById('app').style.display = 'block';
+}
+function saveApiKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (!k.startsWith('sk-ant-') && !k.startsWith('sk-')) { showT('Invalid key format'); return; }
+  localStorage.setItem(SK_KEY, k);
+  hideSetup();
+  init();
+}
+function resetKey() {
+  if (confirm('Reset API key? App data will remain.')) {
+    localStorage.removeItem(SK_KEY);
+    showSetup();
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+async function init() {
+  if (!getKey()) { showSetup(); return; }
+  hideSetup();
+
+  // Date
+  document.getElementById('hdr-date').textContent = DISP.toUpperCase();
+  if (IS_SUN) {
+    document.getElementById('hdr-status').textContent = '⦿ SUNDAY — SEND WEEKLY DIGEST';
+    document.getElementById('hdr-status').style.color = '#3a3a1a';
+  }
+
+  // Load pipeline
+  const savedPipe = lsGet(SK_PIPE);
+  if (savedPipe) pipeline = savedPipe;
+
+  // Load or generate ideas
+  const savedIdeas = lsGet(SK_IDEAS);
+  if (savedIdeas && savedIdeas.length > 0) {
+    ideas = savedIdeas;
+    renderToday();
+  } else {
+    await generate(false);
+  }
+  renderPipeline();
+  updateCounts();
+}
+
+// ─── GENERATION ───────────────────────────────────────────────────────────────
+const IDEA_SYS = `You are the strategic intelligence engine for NNN — NEWNEWNEW, a creative strategy and production studio led by Pablo.
+
+NNN FACTS:
+- Strategy-first studio. Production is output; strategy is the product.
+- Full production capability: real shoots, CGI, motion, emerging tech
+- Active clients: Loewe, Ralph Lauren, Zara, H&M, Marni, Tag Heuer, Timberland, Glossier
+- Core model: proactive "creative trigger" pitching — NNN originates fully-formed concepts and brings them to brands before they ask
+- BD verticals: Fashion/Luxury, Sport/Outdoor, Beauty, Tech, Lifestyle
+- Original IP in development: Discipline of Pain (Muay Thai documentary/brand/product project)
+- Pablo also pursuing CEO candidacy at Retro Super Future (Italian eyewear)
+- Known BD prospects: ${NNN_PROSPECTS.join(', ')}
+
+Generate exactly 10 bold, commercially actionable ideas for NNN's growth. 2 per category:
+
+BD_STRATEGY — New client acquisition, positioning tactics, pipeline strategies
+CREATIVE_STRATEGY — Proactive concepts NNN could pitch to specific brands unprompted
+RETAIL — Product, licensing, physical retail plays beyond pure services
+COMMUNICATION — NNN's own brand amplification, media presence, thought leadership
+BRAND_PARTNERSHIPS — Co-creation, IP licensing, structural brand deals
+
+Rules:
+- Specific. Name brands, formats, exact mechanisms. Not "develop a strategy" — say WHO and HOW.
+- Bold but grounded. Ideas Pablo would wake up excited about.
+- Each idea genuinely distinct from the others.
+- Include 2-3 real specific brand names from prospects in "brands" field.
+- Today: ${TODAY}. Make ideas culturally current.
+
+Return ONLY valid JSON array, no markdown, no backticks, no commentary:
+[{"id":"idea_001","category":"BD_STRATEGY","title":"Punchy title max 8 words","hook":"One sentence. Why this matters now.","body":"2-3 sentences on mechanism, NNN role, why executable.","brands":["Brand1","Brand2"]}]`;
+
+async function generate(force = true) {
+  if (force) localStorage.removeItem(SK_IDEAS);
+
+  setStatus('GENERATING...');
+  document.getElementById('regen-btn').disabled = true;
+  document.getElementById('ideas-meta').textContent = '';
+
+  const container = document.getElementById('ideas-container');
+  container.innerHTML = skeletons(10);
+
+  try {
+    const d = await callClaude(IDEA_SYS, "Generate today's 10 ideas for NNN.", 3200);
+    const txt = d.content?.find(b => b.type === 'text')?.text || '[]';
+    ideas = parseJ(txt);
+    lsSet(SK_IDEAS, ideas);
+    renderToday();
+    updateCounts();
+  } catch (e) {
+    container.innerHTML = `<div class="err">⚠ ${e.message}<br><br><button class="btn btn-dim" onclick="generate(true)">↻ Retry</button></div>`;
+  }
+
+  document.getElementById('regen-btn').disabled = false;
+  setStatus('');
+}
+
+// ─── BRIEF GENERATION ─────────────────────────────────────────────────────────
+const BRIEF_SYS = `You are NNN's strategy director. Generate a full creative brief to develop an idea into a pitch.
+
+NNN is strategy-first. We bring fully-developed concepts to brands — we don't respond to briefs, we create them. Pablo leads. Clients: Loewe, Ralph Lauren, Marni, Glossier.
+
+Return ONLY valid JSON, no markdown, no backticks:
+{"tagline":"One sharp strategic premise","rationale":"Why this idea is right now — 2-3 sentences","targetBrands":["Brand1","Brand2","Brand3"],"nnnRole":"Exactly what NNN owns — strategy, direction, production, format","executionFormat":"What the deliverable is — deck, film, installation, campaign, print","pitchAngle":"The cold pitch hook — one sentence opener for the email","contacts":["CMO at Brand","Head of Brand at Brand"],"effort":"X weeks / specific work items","budget":"Project fee ballpark range","metrics":"How success is defined and measured"}`;
+
+async function developBrief(id) {
+  const item = pipeline.find(p => p.id === id);
+  if (!item) return;
+  briefLoading = id;
+  renderPipeline();
+
+  try {
+    const d = await callClaude(BRIEF_SYS,
+      `Build a full creative brief for this NNN idea:\n\nTitle: ${item.title}\nCategory: ${item.category}\nHook: ${item.hook}\nBody: ${item.body || ''}\nTarget brands: ${(item.brands || []).join(', ')}`,
+      1500
+    );
+    const txt = d.content?.find(b => b.type === 'text')?.text || '{}';
+    const brief = parseJ(txt);
+    pipeline = pipeline.map(p => p.id === id ? { ...p, brief } : p);
+    lsSet(SK_PIPE, pipeline);
+    showT('Brief ready ✓');
+  } catch (e) {
+    showT('Brief error: ' + e.message);
+  }
+
+  briefLoading = null;
+  renderPipeline();
+}
+
+// ─── EMAIL (COPY/PREVIEW FLOW) ─────────────────────────────────────────────────
+async function buildEmailDraft(id) {
+  const item = pipeline.find(p => p.id === id);
+  if (!item) return;
+  const cat = CAT[item.category] || { label: item.category, c: '#888' };
+
+  emailLoading = id;
+  renderPipeline();
+
+  const briefSection = item.brief ? `
+
+═══ CREATIVE BRIEF ═══
+
+Tagline: ${item.brief.tagline || ''}
+Rationale: ${item.brief.rationale || ''}
+NNN's role: ${item.brief.nnnRole || ''}
+Execution format: ${item.brief.executionFormat || ''}
+Pitch angle: ${item.brief.pitchAngle || ''}
+Target brands: ${(item.brief.targetBrands || []).join(', ')}
+Contacts: ${(item.brief.contacts || []).join(' / ')}
+Effort: ${item.brief.effort || ''}
+Budget: ${item.brief.budget || ''}
+Metrics: ${item.brief.metrics || ''}` : '';
+
+  const sys = `You are NNN's strategy director and Pablo's right hand. Write a clean, sharp email that Pablo will send to himself as an idea brief. 
+
+Tone: internal, direct, no fluff. This is how Pablo thinks when he's building something. 
+Format: plain text. No HTML. No markdown. Just the content.
+Voice: first person from Pablo. Terse sentences. NNN-coded.`;
+
+  const prompt = `Write an internal idea brief email for Pablo at NNN.
+
+SUBJECT LINE: NNN IDEA — ${item.title.toUpperCase()}
+
+Content to include:
+- Category: ${cat.label}
+- Idea title: ${item.title}
+- Hook: ${item.hook}
+- Body: ${item.body || ''}
+- Target brands: ${(item.brands || []).join(', ')}
+- Current status: ${item.status}
+${item.notes ? `- Pablo's notes: ${item.notes}` : ''}
+${briefSection}
+
+Write this as Pablo's internal idea file — sharp, no padding. End with a "Next move:" line that suggests the single most important next action.`;
+
+  try {
+    const d = await callClaude(sys, prompt, 1000);
+    const txt = d.content?.find(b => b.type === 'text')?.text || '';
+    const subject = `NNN IDEA — ${item.title.toUpperCase()}`;
+    currentEmailContent = { subject, body: txt };
+    openEmailModal(subject, txt);
+  } catch (e) {
+    showT('Email build failed: ' + e.message);
+  }
+
+  emailLoading = null;
+  renderPipeline();
+}
+
+async function exportDigest() {
+  if (!pipeline.length) { showT('Pipeline is empty'); return; }
+  digestLoading = true;
+  document.getElementById('digest-btn').disabled = true;
+  document.getElementById('digest-btn').textContent = 'Building...';
+
+  const grouped = STATUSES
+    .map(s => ({ s, items: pipeline.filter(p => p.status === s) }))
+    .filter(g => g.items.length);
+
+  const content = grouped.map(({ s, items }) =>
+    `${s.toUpperCase()} (${items.length})\n${'─'.repeat(24)}\n` +
+    items.map(i =>
+      `→ ${i.title}\n  Category: ${(CAT[i.category] || { label: i.category }).label}\n  "${i.hook}"\n  Brands: ${(i.brands || []).join(', ') || '—'}\n  Flagged: ${i.flaggedAt}${i.notes ? `\n  Notes: ${i.notes}` : ''}`
+    ).join('\n\n')
+  ).join('\n\n');
+
+  const sys = `You are NNN's intelligence layer. Write a weekly pipeline digest email that Pablo sends himself every Sunday morning.
+
+Tone: editorial, precise, motivating. Like a briefing you'd want to read.
+Format: plain text only. Clean layout. Use ═══ as section dividers.
+Voice: third person about NNN, second person to Pablo where needed.`;
+
+  const prompt = `Write a weekly pipeline digest email for Pablo.\n\nDate: ${DISP}\nTotal ideas in pipeline: ${pipeline.length}\n\nPIPELINE DATA:\n\n${content}\n\nInclude:\n1. A one-line sharp summary of where NNN's thinking is this week\n2. Each status section with ideas clearly listed\n3. A "This week's priority" callout — the single idea most worth pushing forward right now\n4. A closing line that sets the tone for the week`;
+
+  try {
+    const d = await callClaude(sys, prompt, 1200);
+    const txt = d.content?.find(b => b.type === 'text')?.text || '';
+    const subject = `NNN PIPELINE DIGEST — ${DISP.toUpperCase()}`;
+    currentEmailContent = { subject, body: txt };
+    openEmailModal(subject, txt);
+  } catch (e) {
+    showT('Digest failed: ' + e.message);
+  }
+
+  digestLoading = false;
+  document.getElementById('digest-btn').disabled = false;
+  document.getElementById('digest-btn').textContent = '✉ weekly digest';
+}
+
+// ─── PIPELINE ACTIONS ─────────────────────────────────────────────────────────
+function flagIdea(idea) {
+  if (pipeline.some(p => p.id === idea.id)) { showT('Already in pipeline'); return; }
+  pipeline = [...pipeline, { ...idea, status: 'Seed', notes: '', brief: null, flaggedAt: TODAY }];
+  lsSet(SK_PIPE, pipeline);
+  updateCounts();
+  renderToday();
+  showT('→ Saved to pipeline');
+}
+
+function setStatus(id, s) {
+  if (typeof id !== 'string') return; // guard for setStatus('GENERATING...')
+  pipeline = pipeline.map(p => p.id === id ? { ...p, status: s } : p);
+  lsSet(SK_PIPE, pipeline);
+  renderPipeline();
+}
+
+function removeFromPipe(id) {
+  pipeline = pipeline.filter(p => p.id !== id);
+  lsSet(SK_PIPE, pipeline);
+  updateCounts();
+  renderPipeline();
+  showT('Removed');
+}
+
+function startEditNote(id) {
+  editNoteId = id;
+  renderPipeline();
+  setTimeout(() => {
+    const el = document.getElementById('note-' + id);
+    if (el) el.focus();
+  }, 50);
+}
+
+function saveNote(id) {
+  const el = document.getElementById('note-' + id);
+  if (!el) return;
+  pipeline = pipeline.map(p => p.id === id ? { ...p, notes: el.value } : p);
+  lsSet(SK_PIPE, pipeline);
+  editNoteId = null;
+  renderPipeline();
+  showT('Note saved');
+}
+
+function cancelNote() {
+  editNoteId = null;
+  renderPipeline();
+}
+
+function setBrandFilter(b) {
+  brandFilter = brandFilter === b ? null : b;
+  renderPipeline();
+}
+
+// ─── EMAIL MODAL ──────────────────────────────────────────────────────────────
+function openEmailModal(subject, body) {
+  document.getElementById('modal-subject').textContent = 'SUBJECT: ' + subject;
+  document.getElementById('modal-body').textContent = body;
+  document.getElementById('email-modal').classList.add('visible');
+}
+
+function closeEmailModal(e) {
+  if (!e || e.target === document.getElementById('email-modal')) {
+    document.getElementById('email-modal').classList.remove('visible');
+  }
+}
+
+function copyEmail() {
+  const text = `Subject: ${currentEmailContent.subject}\n\n${currentEmailContent.body}`;
+  navigator.clipboard.writeText(text).then(() => showT('Copied to clipboard ✓'));
+}
+
+// ─── RENDER: TODAY ────────────────────────────────────────────────────────────
+function renderToday() {
+  const container = document.getElementById('ideas-container');
+  if (!ideas.length) { container.innerHTML = ''; return; }
+
+  document.getElementById('ideas-meta').textContent = `${ideas.length} IDEAS — 5 CATEGORIES`;
+
+  let html = '';
+  ideas.forEach((idea, i) => {
+    const cat = CAT[idea.category] || { label: idea.category, c: '#888' };
+    const saved = pipeline.some(p => p.id === idea.id);
+    const isExp = expandedId === idea.id;
+    const brands = (idea.brands || []).map(b => `<span class="brand-chip static">${b}</span>`).join('');
+
+    html += `
+    <div class="idea-row" id="row-${idea.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
+        <div style="flex:1;cursor:pointer" onclick="toggleExpand('${idea.id}')">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+            <span class="m" style="font-size:10px;color:#252525;min-width:20px">${String(i+1).padStart(2,'0')}</span>
+            <span class="cat-tag" style="color:${cat.c};background:${cat.c}18">${cat.label}</span>
+            ${brands}
+          </div>
+          <div style="font-weight:700;font-size:15px;line-height:1.3;margin-bottom:5px;letter-spacing:-.01em">${idea.title}</div>
+          <div class="m" style="font-style:italic;font-size:12px;color:#666;line-height:1.6">${idea.hook}</div>
+          ${isExp && idea.body ? `<div class="idea-body" style="border-left-color:${cat.c}">${idea.body}</div>` : ''}
+          <div class="m" style="font-size:9px;color:#222;margin-top:8px;letter-spacing:.05em">${isExp ? '▲ COLLAPSE' : '▼ EXPAND'}</div>
+        </div>
+        <button class="btn ${saved ? 'btn-acc' : 'btn-dim'}" onclick="event.stopPropagation();${saved ? '' : `flagIdea(ideas[${i}])`}" ${saved ? 'disabled' : ''}>
+          ${saved ? '✓ SAVED' : '→ SAVE'}
+        </button>
+      </div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleExpand(id) {
+  expandedId = expandedId === id ? null : id;
+  renderToday();
+}
+
+// ─── RENDER: PIPELINE ─────────────────────────────────────────────────────────
+function renderPipeline() {
+  updateCounts();
+  const pipeMeta = document.getElementById('pipe-meta');
+  const brandFiltersEl = document.getElementById('brand-filters');
+  const container = document.getElementById('pipe-container');
+
+  if (!pipeline.length) {
+    pipeMeta.textContent = '';
+    brandFiltersEl.innerHTML = '';
+    container.innerHTML = `<div style="text-align:center;padding:80px 0">
+      <div class="m" style="font-size:12px;color:#1a1a1a;letter-spacing:.1em">PIPELINE EMPTY</div>
+      <div class="m" style="font-size:10px;color:#141414;margin-top:8px">Save ideas from today to start tracking</div>
+    </div>`;
+    return;
+  }
+
+  pipeMeta.textContent = `${pipeline.length} IN DEVELOPMENT`;
+
+  // Brand filters
+  const allBrands = [...new Set(pipeline.flatMap(p => p.brands || []))];
+  if (allBrands.length > 0) {
+    let fhtml = `<span class="m" style="font-size:9px;color:#1e1e1e;letter-spacing:.08em;margin-right:4px">FILTER:</span>`;
+    fhtml += `<button class="brand-chip ${!brandFilter ? 'on' : ''}" onclick="setBrandFilter(null)">All</button>`;
+    allBrands.forEach(b => {
+      fhtml += `<button class="brand-chip ${brandFilter === b ? 'on' : ''}" onclick="setBrandFilter('${b}')">${b}</button>`;
+    });
+    brandFiltersEl.innerHTML = fhtml;
+  } else {
+    brandFiltersEl.innerHTML = '';
+  }
+
+  const filtered = brandFilter ? pipeline.filter(p => (p.brands || []).includes(brandFilter)) : pipeline;
+
+  let html = '';
+  filtered.forEach(item => {
+    const cat = CAT[item.category] || { label: item.category, c: '#888' };
+    const isBL = briefLoading === item.id;
+    const isEL = emailLoading === item.id;
+    const isEdit = editNoteId === item.id;
+    const brands = (item.brands || []).map(b => `<span class="brand-chip static">${b}</span>`).join('');
+
+    // Status pills
+    const pills = STATUSES.map(s => {
+      const on = item.status === s;
+      return `<button class="s-pill" onclick="setStatus('${item.id}','${s}')" 
+        style="border-color:${SC[s]};color:${on ? SCT[s] : SC[s]};background:${on ? SC[s] : 'transparent'};opacity:${on ? 1 : .45}">${s}</button>`;
+    }).join('');
+
+    // Brief section
+    let briefHtml = '';
+    if (item.brief) {
+      const b = item.brief;
+      const rows = [
+        ['Strategic rationale', b.rationale],
+        ['NNN\'s role', b.nnnRole],
+        ['Execution format', b.executionFormat],
+        ['Pitch angle', b.pitchAngle],
+        ['Target brands', Array.isArray(b.targetBrands) ? b.targetBrands.join(', ') : b.targetBrands],
+        ['Effort', b.effort],
+        ['Budget range', b.budget],
+        ['Success metrics', b.metrics]
+      ].filter(([, v]) => v);
+
+      briefHtml = `<div class="brief-wrap">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div class="m" style="font-size:9px;letter-spacing:.15em;color:var(--acc)">CREATIVE BRIEF</div>
+            ${b.tagline ? `<div class="m" style="font-style:italic;font-size:11px;color:#4a4a4a">"${b.tagline}"</div>` : ''}
+          </div>
+          <button class="btn btn-dim" style="font-size:9px;padding:3px 10px" onclick="clearBrief('${item.id}')">↺ redo</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px">
+          ${rows.map(([label, val]) => `<div><div class="b-label">${label}</div><div class="b-val">${val}</div></div>`).join('')}
+        </div>
+        ${b.contacts && b.contacts.length ? `
+        <div style="margin-top:12px;border-top:1px solid #161616;padding-top:12px">
+          <div class="b-label">Contacts to approach</div>
+          ${b.contacts.map(c => `<div class="m" style="font-size:12px;color:#555;margin-bottom:3px">→ ${c}</div>`).join('')}
+        </div>` : ''}
+      </div>`;
+    }
+
+    // Note section
+    const noteHtml = isEdit ? `
+      <textarea id="note-${item.id}" class="note" rows="3" 
+        placeholder="Next steps, contacts, angles, timing...">${item.notes || ''}</textarea>
+      <div style="display:flex;gap:7px;margin-top:6px">
+        <button class="btn-solid" onclick="saveNote('${item.id}')">Save</button>
+        <button class="btn btn-dim" onclick="cancelNote()">Cancel</button>
+      </div>` :
+      `<div onclick="startEditNote('${item.id}')" 
+        style="font-family:var(--mono);font-size:11px;color:${item.notes ? '#555' : '#1e1e1e'};cursor:text;line-height:1.7;font-style:${item.notes ? 'normal' : 'italic'};min-height:16px;margin-bottom:12px">
+        ${item.notes || '+ add notes'}
+      </div>`;
+
+    html += `
+    <div class="pipe-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap">
+            <span class="cat-tag" style="color:${cat.c};background:${cat.c}18">${cat.label}</span>
+            ${brands}
+            <span class="m" style="font-size:9px;color:#222;margin-left:auto">${item.flaggedAt}</span>
+          </div>
+          <div style="font-weight:700;font-size:15px;letter-spacing:-.01em;margin-bottom:4px">${item.title}</div>
+          <div class="m" style="font-style:italic;font-size:11px;color:#555;line-height:1.6">${item.hook}</div>
+        </div>
+        <button class="btn-x" onclick="removeFromPipe('${item.id}')">×</button>
+      </div>
+
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">${pills}</div>
+      <hr class="divider">
+      ${noteHtml}
+      ${briefHtml}
+
+      <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;border-top:1px solid #111;padding-top:12px;align-items:center">
+        ${!item.brief ?
+          `<button class="btn btn-acc" onclick="developBrief('${item.id}')" ${isBL ? 'disabled' : ''}>
+            ${isBL ? '<span class="spin"></span> Building...' : '⊞ Develop brief'}
+          </button>` :
+          `<span class="m" style="font-size:9px;color:#2a2a2a;align-self:center">BRIEF READY ✓</span>`
+        }
+        <button class="btn btn-dim" onclick="buildEmailDraft('${item.id}')" ${isEL ? 'disabled' : ''}>
+          ${isEL ? '<span class="spin"></span> Building...' : '✉ Email this idea'}
+        </button>
+      </div>
+    </div>`;
+  });
+
+  container.innerHTML = html || `<div class="m" style="font-size:11px;color:#1e1e1e;padding:30px 0;text-align:center">No ideas match this brand filter</div>`;
+}
+
+function clearBrief(id) {
+  pipeline = pipeline.map(p => p.id === id ? { ...p, brief: null } : p);
+  lsSet(SK_PIPE, pipeline);
+  renderPipeline();
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('pane-today').style.display = tab === 'today' ? 'block' : 'none';
+  document.getElementById('pane-pipeline').style.display = tab === 'pipeline' ? 'block' : 'none';
+  document.getElementById('tab-today').classList.toggle('on', tab === 'today');
+  document.getElementById('tab-pipeline').classList.toggle('on', tab === 'pipeline');
+  if (tab === 'pipeline') renderPipeline();
+}
+
+function updateCounts() {
+  document.getElementById('today-count').textContent = ideas.length;
+  document.getElementById('pipe-count').textContent = pipeline.length;
+}
+
+function setStatus(id, s) {
+  if (typeof id !== 'string' || !id.startsWith('idea_')) return;
+  pipeline = pipeline.map(p => p.id === id ? { ...p, status: s } : p);
+  lsSet(SK_PIPE, pipeline);
+  renderPipeline();
+}
+
+function setHdrStatus(msg) {
+  const el = document.getElementById('hdr-status');
+  if (el && !IS_SUN) { el.textContent = msg; el.style.color = msg ? '#3a3a1a' : ''; }
+}
+
+function skeletons(n) {
+  return [...Array(n)].map((_, i) =>
+    `<div class="skel" style="animation-delay:${i * .06}s"></div>`
+  ).join('');
+}
+
+function showT(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.display = 'none'; }, 2400);
+}
+
+// ─── KEYBOARD ─────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeEmailModal();
+});
+
+// ─── START ────────────────────────────────────────────────────────────────────
+document.getElementById('api-key-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveApiKey();
+});
+
+init();
+</script>
+</body>
+</html>
